@@ -4,7 +4,6 @@ import { SearchBar } from './components/SearchBar'
 import type { ComicIssue } from './lib/comicvine'
 import { searchIssueSuggestions, searchIssues } from './lib/comicvine'
 import { Card } from './components/ui/Card'
-import { PlayerBar } from './components/PlayerBar'
 import { IssuePage } from './pages/IssuePage'
 import { AuthPanel } from './components/AuthPanel'
 
@@ -104,7 +103,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-ink-950 text-white">
-      <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-10 px-6 py-10 pb-28">
+      <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-10 px-6 py-10">
         <header className="flex flex-col gap-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-3">
@@ -156,7 +155,6 @@ export default function App() {
           </section>
         )}
       </div>
-      <PlayerBar />
     </div>
   )
 }

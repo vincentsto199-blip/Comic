@@ -1,5 +1,4 @@
 import { Button } from './ui/Button'
-import { usePlayer } from '../context/PlayerContext'
 import type { Track } from '../types'
 
 interface TrackRowProps {
@@ -8,7 +7,6 @@ interface TrackRowProps {
 }
 
 export function TrackRow({ track, onPlay }: TrackRowProps) {
-  const { isReady, error } = usePlayer()
   const pageLabel =
     track.page_start && track.page_end
       ? `Pages ${track.page_start}-${track.page_end}`
@@ -21,23 +19,11 @@ export function TrackRow({ track, onPlay }: TrackRowProps) {
         <p className="text-xs text-white/60">{pageLabel}</p>
       </div>
       <Button
-        onClick={() => {
-          if (!isReady || error) {
-            window.open(track.youtube_url, '_blank', 'noopener,noreferrer')
-            return
-          }
-          onPlay(track)
-        }}
+        onClick={() => onPlay(track)}
         className="px-3 py-1.5 text-xs"
-        disabled={!isReady && !error}
       >
-        {isReady && !error ? 'Play' : error ? 'Open' : 'Loading player...'}
+        Open
       </Button>
-      {!isReady && error ? (
-        <p className="text-xs text-red-200">
-          Player blocked. Disable adblock or open in YouTube.
-        </p>
-      ) : null}
     </div>
   )
 }

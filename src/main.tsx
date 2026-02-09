@@ -3,7 +3,6 @@ import { createRoot } from 'react-dom/client'
 import App from './App'
 import './style.css'
 import { AuthProvider } from './context/AuthContext'
-import { PlayerProvider } from './context/PlayerContext'
 
 const rootElement = document.querySelector('#root')
 
@@ -14,9 +13,7 @@ if (!rootElement) {
 createRoot(rootElement).render(
   <StrictMode>
     <AuthProvider>
-      <PlayerProvider>
-        <App />
-      </PlayerProvider>
+      <App />
     </AuthProvider>
   </StrictMode>,
 )

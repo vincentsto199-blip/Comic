@@ -18,7 +18,6 @@ import {
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { SoundtrackCard } from '../components/SoundtrackCard'
-import { usePlayer } from '../context/PlayerContext'
 import { useAuth } from '../context/AuthContext'
 import type { Soundtrack, Track } from '../types'
 
@@ -41,7 +40,6 @@ export function IssuePage({ issue, onBack }: IssuePageProps) {
   const [editingSoundtrackId, setEditingSoundtrackId] = useState<string | null>(
     null,
   )
-  const { playQueue } = usePlayer()
   const { user } = useAuth()
 
   useEffect(() => {
@@ -54,8 +52,9 @@ export function IssuePage({ issue, onBack }: IssuePageProps) {
         if (!firebaseReady || !firestore) {
           throw new Error('Missing Firebase configuration.')
         }
+        const db = firestore
 
-        const issuesRef = collection(firestore, 'issues')
+        const issuesRef = collection(db, 'issues')
         const issueQuery = query(
           issuesRef,
           where('comicvine_issue_id', '==', String(issue.id)),
@@ -77,7 +76,7 @@ export function IssuePage({ issue, onBack }: IssuePageProps) {
           issueDocId = issueSnapshot.docs[0].id
         }
 
-        const soundtracksRef = collection(firestore, 'soundtracks')
+        const soundtracksRef = collection(db, 'soundtracks')
         const soundtracksQuery = query(
           soundtracksRef,
           where('issue_id', '==', issueDocId),
@@ -108,7 +107,7 @@ export function IssuePage({ issue, onBack }: IssuePageProps) {
             downvotes: data.downvotes ?? 0,
             user_id: data.user_id ?? 'unknown',
             user_name: data.user_name ?? 'Anonymous',
-            currentUserVote: 0,
+            currentUserVote: 0 as 0,
           }
         })
 
@@ -118,7 +117,7 @@ export function IssuePage({ issue, onBack }: IssuePageProps) {
               return soundtrack
             }
             const voteRef = doc(
-              firestore,
+              db,
               'soundtracks',
               soundtrack.id,
               'votes',
@@ -126,11 +125,11 @@ export function IssuePage({ issue, onBack }: IssuePageProps) {
             )
             const voteSnap = await getDoc(voteRef)
             const voteValue = voteSnap.exists()
-              ? ((voteSnap.data().value as 1 | -1) ?? 0)
+              ? ((voteSnap.data().value as 1 | -1 | 0) ?? 0)
               : 0
             return {
               ...soundtrack,
-              currentUserVote: voteValue,
+              currentUserVote: voteValue as 1 | -1 | 0,
             }
           }),
         )
@@ -158,8 +157,8 @@ export function IssuePage({ issue, onBack }: IssuePageProps) {
     }
   }, [issue, refreshKey, user])
 
-  const handlePlay = (track: Track, tracks: Track[]) => {
-    playQueue(tracks, track)
+  const handlePlay = (track: Track) => {
+    window.open(track.youtube_url, '_blank', 'noopener,noreferrer')
   }
 
   const handleAddTrackRow = () => {
@@ -507,7 +506,7 @@ export function IssuePage({ issue, onBack }: IssuePageProps) {
               <SoundtrackCard
                 key={soundtrack.id}
                 soundtrack={soundtrack}
-                onPlay={(track) => handlePlay(track, soundtrack.tracks)}
+                onPlay={(track) => handlePlay(track)}
                 onVote={handleVote}
                 onEdit={handleEdit}
                 currentUserId={user?.id}
