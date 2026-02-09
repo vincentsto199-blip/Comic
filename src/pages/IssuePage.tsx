@@ -331,6 +331,7 @@ export function IssuePage({ issue, onBack }: IssuePageProps) {
     setRefreshKey((prev) => prev + 1)
   }
 
+
   const handleEdit = (soundtrack: Soundtrack) => {
     if (!user || soundtrack.user_id !== user.id) {
       return
