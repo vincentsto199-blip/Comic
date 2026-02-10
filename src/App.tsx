@@ -115,9 +115,11 @@ export default function App() {
             }}
             className="flex items-center gap-2.5 cursor-pointer group"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent-red text-sm font-bold text-white shadow-md shadow-accent-red/30 transition-transform duration-200 group-hover:scale-105">
-              C
-            </div>
+            <img
+              src="/logo.png"
+              alt="Comictracks logo"
+              className="h-8 w-8 object-contain transition-transform duration-200 group-hover:scale-105"
+            />
             <span className="text-base font-semibold tracking-tight text-white">
               Comictracks
             </span>
@@ -139,18 +141,12 @@ export default function App() {
                 hasResults ? 'py-8' : 'flex-1 py-16'
               }`}
             >
-              <div className={`flex flex-col items-center gap-6 transition-all duration-500 ${hasResults ? 'scale-90' : ''}`}>
-                {/* Logo icon */}
-                <div className={`flex items-center justify-center rounded-2xl bg-gradient-to-br from-accent-red to-accent-red-muted shadow-xl shadow-accent-red/20 transition-all duration-500 ${
-                  hasResults ? 'h-12 w-12 text-lg' : 'h-16 w-16 text-2xl'
-                }`}>
-                  <span className="font-bold text-white">C</span>
-                </div>
+              <div className={`flex flex-col items-center gap-5 transition-all duration-500 ${hasResults ? 'scale-95' : ''}`}>
                 <div>
-                  <h1 className={`font-bold tracking-tight text-white transition-all duration-500 ${
+                  <h1 className={`font-bold tracking-tight text-white transition-all duration-500 text-balance ${
                     hasResults ? 'text-2xl' : 'text-4xl md:text-5xl'
                   }`}>
-                    Comictracks
+                    Comic<span className="text-accent-red">tracks</span>
                   </h1>
                   <p className={`mt-2 text-white/40 transition-all duration-500 ${
                     hasResults ? 'text-sm' : 'text-base md:text-lg'
@@ -191,6 +187,7 @@ export default function App() {
                 <ComicGrid issues={issues} onSelect={handleSelectIssue} />
               ) : !hasResults ? (
                 <div className="flex flex-col items-center gap-3 py-8 text-center">
+                  <div className="h-px w-16 bg-accent-red/20 mb-1" />
                   <p className="text-sm text-white/30">
                     Search for a comic issue to discover and share soundtracks
                   </p>

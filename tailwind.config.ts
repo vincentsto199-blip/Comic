@@ -14,9 +14,9 @@ export default {
           500: '#3a3a52',
         },
         accent: {
-          red: '#dc2626',
-          'red-hover': '#ef4444',
-          'red-muted': '#991b1b',
+          red: '#F25F5C',
+          'red-hover': '#F47C7A',
+          'red-muted': '#C44A48',
           blue: '#3b82f6',
           'blue-hover': '#60a5fa',
           'blue-muted': '#1e40af',

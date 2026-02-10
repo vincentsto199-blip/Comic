@@ -39,6 +39,6 @@ body {
 
 /* Selection color */
 ::selection {
-  background: rgba(220, 38, 38, 0.3);
+  background: rgba(242, 95, 92, 0.3);
   color: white;
 }
