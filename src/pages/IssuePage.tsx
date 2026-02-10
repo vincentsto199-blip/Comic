@@ -349,173 +349,274 @@ export function IssuePage({ issue, onBack }: IssuePageProps) {
     setShowForm(true)
   }
 
+  const formInputClass =
+    'w-full rounded-lg border border-white/[0.08] bg-ink-800/60 px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 transition-colors duration-200 focus:border-accent-blue/40 focus:bg-ink-800 focus:outline-none focus:ring-1 focus:ring-accent-blue/20'
+
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-white/60">Issue details</p>
-          <h2 className="text-2xl font-semibold">
-            {issue.volume?.name ?? 'Untitled'} #{issue.issue_number}
-          </h2>
-        </div>
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
+          <button
+            onClick={onBack}
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04] text-white/50 transition-all duration-200 hover:bg-white/[0.08] hover:text-white cursor-pointer"
+            aria-label="Back to results"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider text-accent-red/80">Issue</p>
+            <h2 className="text-xl font-bold tracking-tight text-white md:text-2xl">
+              {issue.volume?.name ?? 'Untitled'} <span className="text-white/40">#{issue.issue_number}</span>
+            </h2>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
           {user ? (
-            <Button onClick={() => setShowForm((prev) => !prev)}>
-              {showForm ? 'Close' : '+ Add playlist'}
+            <Button
+              variant="primary"
+              onClick={() => {
+                if (showForm && !editingSoundtrackId) {
+                  setShowForm(false)
+                } else {
+                  setEditingSoundtrackId(null)
+                  setPlaylistTitle('')
+                  setTracksDraft([{ title: '', youtube_url: '', page_start: '', page_end: '' }])
+                  setShowForm(true)
+                }
+              }}
+              className="text-sm"
+            >
+              {showForm && !editingSoundtrackId ? (
+                <>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                  Cancel
+                </>
+              ) : (
+                <>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                  Add playlist
+                </>
+              )}
             </Button>
           ) : (
-            <p className="text-sm text-white/50">Sign in to add a playlist.</p>
+            <p className="text-sm text-white/30">Sign in to add a playlist</p>
           )}
-          <Button onClick={onBack}>Back to results</Button>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_2fr]">
-        <Card className="flex flex-col gap-4 p-4">
-          {issue.image?.super_url ? (
-            <img
-              src={issue.image.super_url}
-              alt={issue.name ?? 'Issue cover'}
-              className="h-80 w-full rounded-xl object-cover"
-              loading="lazy"
-            />
-          ) : (
-            <div className="flex h-80 items-center justify-center rounded-xl bg-ink-800 text-sm text-white/40">
-              No cover
-            </div>
-          )}
-          <div>
-            <p className="text-lg font-semibold">
+      <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
+        {/* Left: Cover card */}
+        <div className="flex flex-col gap-4">
+          <div className="overflow-hidden rounded-xl border border-white/[0.07] bg-ink-900/60 shadow-xl shadow-black/30">
+            {issue.image?.super_url ? (
+              <img
+                src={issue.image.super_url}
+                alt={issue.name ?? 'Issue cover'}
+                className="w-full object-cover aspect-[2/3]"
+                loading="lazy"
+              />
+            ) : (
+              <div className="flex aspect-[2/3] items-center justify-center bg-ink-800 text-sm text-white/30">
+                No cover
+              </div>
+            )}
+          </div>
+          <div className="px-1">
+            <p className="text-base font-semibold text-white/90">
               {issue.name ?? 'Unnamed Issue'}
             </p>
-            <p className="text-sm text-white/60">
-              Cover date: {issue.cover_date ?? 'Unknown'}
+            <p className="mt-1 text-xs text-white/40">
+              {issue.cover_date ?? 'Unknown date'}
             </p>
           </div>
-        </Card>
+        </div>
 
+        {/* Right: Soundtracks column */}
         <div className="flex flex-col gap-4">
           {error ? (
-            <Card className="border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+            <div className="rounded-lg border border-accent-red/20 bg-accent-red/5 p-4 text-sm text-red-200 animate-fade-in-fast">
               {error}
-            </Card>
+            </div>
           ) : null}
+
+          {/* Playlist form */}
           {showForm ? (
-            <Card className="flex flex-col gap-4 p-5">
-              <div>
-                <p className="text-sm font-semibold">
-                  {editingSoundtrackId ? 'Edit playlist' : 'New playlist'}
-                </p>
-                <p className="text-xs text-white/60">
-                  Add tracks with page ranges and YouTube links.
-                </p>
+            <Card className="flex flex-col gap-5 p-6 animate-scale-in">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-white">
+                    {editingSoundtrackId ? 'Edit playlist' : 'New playlist'}
+                  </h3>
+                  <p className="text-xs text-white/40 mt-0.5">
+                    Add tracks with page ranges and YouTube links.
+                  </p>
+                </div>
+                {editingSoundtrackId ? (
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setEditingSoundtrackId(null)
+                      setPlaylistTitle('')
+                      setTracksDraft([{ title: '', youtube_url: '', page_start: '', page_end: '' }])
+                      setShowForm(false)
+                    }}
+                    className="text-xs text-white/40"
+                  >
+                    Cancel edit
+                  </Button>
+                ) : null}
               </div>
-              <div className="flex flex-col gap-3">
-                <label className="text-xs text-white/60">Playlist title</label>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-white/50">Playlist title</label>
                 <input
-                  className="w-full rounded-xl border border-white/10 bg-ink-900 px-4 py-3 text-sm text-white placeholder:text-white/40 shadow-sm focus:border-white/30 focus:outline-none"
+                  className={formInputClass}
                   value={playlistTitle}
                   onChange={(event) => setPlaylistTitle(event.target.value)}
                   placeholder="e.g. Noir city vibes"
                 />
               </div>
-              <div className="flex flex-col gap-4">
+
+              <div className="flex flex-col gap-3">
+                <label className="text-xs font-medium text-white/50">Tracks</label>
                 {tracksDraft.map((track, index) => (
                   <div
                     key={index}
-                    className="grid gap-3 rounded-xl border border-white/10 bg-ink-950/60 p-4 md:grid-cols-2"
+                    className="rounded-lg border border-white/[0.06] bg-ink-950/40 p-4 animate-fade-in-fast"
                   >
-                    <input
-                      className="w-full rounded-xl border border-white/10 bg-ink-900 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none"
-                      value={track.title}
-                      onChange={(event) =>
-                        handleTrackChange(index, 'title', event.target.value)
-                      }
-                      placeholder="Track title"
-                    />
-                    <input
-                      className="w-full rounded-xl border border-white/10 bg-ink-900 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none"
-                      value={track.youtube_url}
-                      onChange={(event) =>
-                        handleTrackChange(
-                          index,
-                          'youtube_url',
-                          event.target.value,
-                        )
-                      }
-                      placeholder="YouTube URL"
-                    />
-                    <input
-                      className="w-full rounded-xl border border-white/10 bg-ink-900 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none"
-                      value={track.page_start}
-                      onChange={(event) =>
-                        handleTrackChange(
-                          index,
-                          'page_start',
-                          event.target.value,
-                        )
-                      }
-                      placeholder="Page start (optional)"
-                    />
-                    <input
-                      className="w-full rounded-xl border border-white/10 bg-ink-900 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-white/30 focus:outline-none"
-                      value={track.page_end}
-                      onChange={(event) =>
-                        handleTrackChange(
-                          index,
-                          'page_end',
-                          event.target.value,
-                        )
-                      }
-                      placeholder="Page end (optional)"
-                    />
-                    <div className="flex items-center justify-end md:col-span-2">
-                      <Button
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-medium text-white/30">Track {index + 1}</span>
+                      <button
                         onClick={() => handleRemoveTrackRow(index)}
-                        className="px-3 py-1.5 text-xs"
+                        className="text-xs text-white/30 hover:text-accent-red transition-colors cursor-pointer"
                       >
-                        Remove track
-                      </Button>
+                        Remove
+                      </button>
+                    </div>
+                    <div className="grid gap-2.5 md:grid-cols-2">
+                      <input
+                        className={formInputClass}
+                        value={track.title}
+                        onChange={(event) =>
+                          handleTrackChange(index, 'title', event.target.value)
+                        }
+                        placeholder="Track title"
+                      />
+                      <input
+                        className={formInputClass}
+                        value={track.youtube_url}
+                        onChange={(event) =>
+                          handleTrackChange(index, 'youtube_url', event.target.value)
+                        }
+                        placeholder="YouTube URL"
+                      />
+                      <input
+                        className={formInputClass}
+                        value={track.page_start}
+                        onChange={(event) =>
+                          handleTrackChange(index, 'page_start', event.target.value)
+                        }
+                        placeholder="Page start (optional)"
+                      />
+                      <input
+                        className={formInputClass}
+                        value={track.page_end}
+                        onChange={(event) =>
+                          handleTrackChange(index, 'page_end', event.target.value)
+                        }
+                        placeholder="Page end (optional)"
+                      />
                     </div>
                   </div>
                 ))}
-                <Button onClick={handleAddTrackRow} className="self-start">
-                  + Add another track
-                </Button>
+                <button
+                  onClick={handleAddTrackRow}
+                  className="flex items-center gap-2 self-start rounded-lg px-3 py-2 text-xs font-medium text-accent-blue hover:bg-accent-blue/10 transition-colors cursor-pointer"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                  Add another track
+                </button>
               </div>
-              <div className="flex items-center justify-end gap-3">
+
+              <div className="flex items-center justify-end gap-3 pt-2 border-t border-white/[0.05]">
                 <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setShowForm(false)
+                    setEditingSoundtrackId(null)
+                  }}
+                  className="text-sm"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
                   onClick={handleCreatePlaylist}
                   disabled={isSaving}
-                  className="px-4 py-2"
+                  className="px-5 py-2 text-sm"
                 >
-                  {isSaving
-                    ? 'Saving...'
-                    : editingSoundtrackId
-                    ? 'Save changes'
-                    : 'Publish playlist'}
+                  {isSaving ? (
+                    <span className="flex items-center gap-2">
+                      <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Saving
+                    </span>
+                  ) : editingSoundtrackId ? 'Save changes' : 'Publish playlist'}
                 </Button>
               </div>
             </Card>
           ) : null}
+
+          {/* Soundtracks list */}
           {isLoading ? (
-            <Card className="p-6 text-sm text-white/60">
-              Loading community soundtracks...
-            </Card>
+            <div className="flex flex-col gap-4">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="rounded-xl border border-white/[0.05] bg-ink-900/40 p-5 animate-pulse">
+                  <div className="h-4 w-1/3 rounded bg-white/[0.06] mb-3" />
+                  <div className="h-3 w-1/4 rounded bg-white/[0.04] mb-4" />
+                  <div className="h-12 w-full rounded bg-white/[0.03]" />
+                </div>
+              ))}
+            </div>
           ) : soundtracks.length > 0 ? (
-            soundtracks.map((soundtrack) => (
-              <SoundtrackCard
-                key={soundtrack.id}
-                soundtrack={soundtrack}
-                onPlay={(track) => handlePlay(track)}
-                onVote={handleVote}
-                onEdit={handleEdit}
-                currentUserId={user?.id}
-              />
-            ))
+            <div className="flex flex-col gap-4">
+              <p className="text-xs font-medium uppercase tracking-wider text-white/25">
+                Community Soundtracks ({soundtracks.length})
+              </p>
+              {soundtracks.map((soundtrack, idx) => (
+                <div key={soundtrack.id} className="animate-fade-in" style={{ animationDelay: `${idx * 60}ms` }}>
+                  <SoundtrackCard
+                    soundtrack={soundtrack}
+                    onPlay={(track) => handlePlay(track)}
+                    onVote={handleVote}
+                    onEdit={handleEdit}
+                    currentUserId={user?.id}
+                  />
+                </div>
+              ))}
+            </div>
           ) : (
-            <Card className="p-6 text-sm text-white/60">
-              No soundtracks yet. Be the first to add one.
+            <Card className="flex flex-col items-center gap-3 p-10 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/[0.04]">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-white/20">
+                  <path d="M9 18V5l12-2v13" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle cx="6" cy="18" r="3" />
+                  <circle cx="18" cy="16" r="3" />
+                </svg>
+              </div>
+              <p className="text-sm text-white/40">No soundtracks yet</p>
+              <p className="text-xs text-white/25">Be the first to add one for this issue.</p>
             </Card>
           )}
         </div>
