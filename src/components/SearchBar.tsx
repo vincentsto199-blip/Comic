@@ -62,7 +62,7 @@ export function SearchBar({
           onChange={(event) => onChange(event.target.value)}
           onFocus={() => setIsFocused(true)}
           placeholder="Search comic issue..."
-          className="w-full rounded-xl border border-white/[0.08] bg-ink-800/50 py-3.5 pl-11 pr-28 text-sm text-white placeholder:text-white/30 shadow-lg shadow-black/20 transition-all duration-200 focus:border-accent-blue/30 focus:bg-ink-800/80 focus:outline-none focus:ring-1 focus:ring-accent-blue/20 focus:shadow-accent-blue/5"
+          className="w-full rounded-xl border border-white/[0.08] bg-ink-800/50 py-3.5 pl-11 pr-28 text-sm text-white placeholder:text-white/30 shadow-lg shadow-black/20 transition-all duration-200 focus:border-accent-red/25 focus:bg-ink-800/80 focus:outline-none focus:ring-1 focus:ring-accent-red/15 focus:shadow-accent-red/5"
         />
 
         <button
@@ -87,7 +87,7 @@ export function SearchBar({
         <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-xl border border-white/[0.08] bg-ink-900/95 backdrop-blur-lg shadow-2xl shadow-black/40 animate-slide-down">
           {isSuggesting ? (
             <div className="flex items-center gap-3 px-4 py-3">
-              <div className="h-4 w-4 rounded-full border-2 border-accent-blue/50 border-t-transparent animate-spin" />
+              <div className="h-4 w-4 rounded-full border-2 border-accent-red/50 border-t-transparent animate-spin" />
               <span className="text-sm text-white/40">Searching...</span>
             </div>
           ) : (

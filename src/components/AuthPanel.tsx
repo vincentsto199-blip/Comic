@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import ReactDOM from 'react-dom'
 import { useAuth } from '../context/AuthContext'
 import { firebaseReady } from '../lib/firebase'
 import { Button } from './ui/Button'
@@ -97,9 +98,9 @@ export function AuthPanel() {
         </Button>
       </div>
 
-      {showModal ? (
+      {showModal ? ReactDOM.createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in-fast"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in-fast"
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowModal(false)
           }}
@@ -173,7 +174,8 @@ export function AuthPanel() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       ) : null}
     </>
   )
