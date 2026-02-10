@@ -113,12 +113,12 @@ export default function App() {
               setQuery('')
               setError(null)
             }}
-            className="flex items-center gap-2.5 cursor-pointer group"
+            className="flex items-center gap-1 cursor-pointer group"
           >
             <img
-              src="/logo.png"
+              src={`${import.meta.env.BASE_URL}logo.svg`}
               alt="Comictracks logo"
-              className="h-8 w-8 object-contain transition-transform duration-200 group-hover:scale-105"
+              className="h-14 w-14 translate-y-[2px] object-contain transition-transform duration-200 group-hover:scale-105"
             />
             <span className="text-base font-semibold tracking-tight text-white">
               Comictracks
