@@ -99,14 +99,14 @@ export function AuthPanel() {
 
       {showModal ? (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-black/60 px-4 py-16 backdrop-blur-sm animate-fade-in-fast"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in-fast"
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowModal(false)
           }}
         >
           <div
             ref={modalRef}
-            className="relative w-full max-w-sm rounded-xl border border-white/[0.08] bg-ink-900 p-6 shadow-2xl shadow-black/40 animate-scale-in"
+            className="relative w-full max-w-sm mx-4 rounded-xl border border-white/[0.08] bg-ink-900 p-6 shadow-2xl shadow-black/40 animate-scale-in"
           >
             <button
               onClick={() => setShowModal(false)}
