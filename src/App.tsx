@@ -14,7 +14,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null)
   const [selectedIssue, setSelectedIssue] = useState<ComicIssue | null>(null)
   const [recentSearches, setRecentSearches] = useState<string[]>([])
-  const [suggestions, setSuggestions] = useState<string[]>([])
+  const [suggestions, setSuggestions] = useState<ComicIssue[]>([])
   const [isSuggesting, setIsSuggesting] = useState(false)
   const debounceRef = useRef<number | null>(null)
 
@@ -30,7 +30,7 @@ export default function App() {
     }
   }, [])
 
-  const localSuggestions = useMemo(() => {
+  const localSuggestionLabels = useMemo(() => {
     if (!query.trim()) {
       return recentSearches.slice(0, 6)
     }
@@ -41,12 +41,8 @@ export default function App() {
   }, [query, recentSearches])
 
   useEffect(() => {
-    if (!query.trim()) {
-      setSuggestions(localSuggestions)
-      return
-    }
-    if (query.trim().length < 2) {
-      setSuggestions(localSuggestions)
+    if (!query.trim() || query.trim().length < 2) {
+      setSuggestions([])
       return
     }
 
@@ -58,18 +54,14 @@ export default function App() {
       try {
         setIsSuggesting(true)
         const results = await searchIssueSuggestions(query.trim())
-        const titles = results.map(
-          (issue) =>
-            `${issue.volume?.name ?? 'Untitled'} #${issue.issue_number}`,
-        )
-        setSuggestions(titles)
+        setSuggestions(results)
       } catch {
-        setSuggestions(localSuggestions)
+        setSuggestions([])
       } finally {
         setIsSuggesting(false)
       }
     }, 350)
-  }, [query, localSuggestions])
+  }, [query])
 
   const handleSearch = async (overrideQuery?: string) => {
     const activeQuery = (overrideQuery ?? query).trim()
@@ -101,58 +93,111 @@ export default function App() {
     }
   }
 
+  const handleSelectIssue = (issue: ComicIssue) => {
+    setSelectedIssue(issue)
+    setSuggestions([])
+    setQuery('')
+  }
+
+  const hasResults = issues.length > 0 || selectedIssue
+
   return (
     <div className="min-h-screen bg-ink-950 text-white">
-      <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-10 px-6 py-10">
-        <header className="flex flex-col gap-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-ink-800 text-lg font-semibold">
-                C
-              </div>
-              <div>
-                <p className="text-lg font-semibold">Comictracks</p>
-                <p className="text-sm text-white/60">
-                  Community soundtracks for comic issues
-                </p>
-              </div>
+      {/* Top nav bar */}
+      <nav className="fixed top-0 left-0 right-0 z-40 border-b border-white/[0.05] bg-ink-950/80 backdrop-blur-lg">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+          <button
+            onClick={() => {
+              setSelectedIssue(null)
+              setIssues([])
+              setQuery('')
+              setError(null)
+            }}
+            className="flex items-center gap-2.5 cursor-pointer group"
+          >
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent-red text-sm font-bold text-white shadow-md shadow-accent-red/30 transition-transform duration-200 group-hover:scale-105">
+              C
             </div>
-            <AuthPanel />
-          </div>
-          <div className="w-full md:max-w-xl">
-            <SearchBar
-              value={query}
-              onChange={setQuery}
-              onSubmit={() => handleSearch()}
-              isLoading={isLoading}
-              suggestions={suggestions}
-              isSuggesting={isSuggesting}
-              onSelectSuggestion={(value) => {
-                setQuery(value)
-                setError(null)
-                handleSearch(value)
-              }}
-            />
-          </div>
-        </header>
+            <span className="text-base font-semibold tracking-tight text-white">
+              Comictracks
+            </span>
+          </button>
+          <AuthPanel />
+        </div>
+      </nav>
 
+      <div className="mx-auto flex min-h-screen max-w-6xl flex-col px-6 pt-20 pb-16">
         {selectedIssue ? (
-          <IssuePage issue={selectedIssue} onBack={() => setSelectedIssue(null)} />
+          <div className="animate-fade-in">
+            <IssuePage issue={selectedIssue} onBack={() => setSelectedIssue(null)} />
+          </div>
         ) : (
-          <section className="flex flex-col gap-6">
-            {error ? (
-              <Card className="border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
-                {error}
-              </Card>
-            ) : null}
-            {issues.length > 0 ? (
-              <ComicGrid issues={issues} onSelect={setSelectedIssue} />
-            ) : (
-              <Card className="p-6 text-sm text-white/60">
-                Search for a comic issue to see community soundtracks.
-              </Card>
-            )}
-          </section>
+          <>
+            {/* Hero / centered search section */}
+            <header
+              className={`flex flex-col items-center justify-center text-center transition-all duration-500 ease-out ${
+                hasResults ? 'py-8' : 'flex-1 py-16'
+              }`}
+            >
+              <div className={`flex flex-col items-center gap-6 transition-all duration-500 ${hasResults ? 'scale-90' : ''}`}>
+                {/* Logo icon */}
+                <div className={`flex items-center justify-center rounded-2xl bg-gradient-to-br from-accent-red to-accent-red-muted shadow-xl shadow-accent-red/20 transition-all duration-500 ${
+                  hasResults ? 'h-12 w-12 text-lg' : 'h-16 w-16 text-2xl'
+                }`}>
+                  <span className="font-bold text-white">C</span>
+                </div>
+                <div>
+                  <h1 className={`font-bold tracking-tight text-white transition-all duration-500 ${
+                    hasResults ? 'text-2xl' : 'text-4xl md:text-5xl'
+                  }`}>
+                    Comictracks
+                  </h1>
+                  <p className={`mt-2 text-white/40 transition-all duration-500 ${
+                    hasResults ? 'text-sm' : 'text-base md:text-lg'
+                  }`}>
+                    Community soundtracks for comic issues
+                  </p>
+                </div>
+
+                {/* Search bar */}
+                <div className="w-full max-w-xl">
+                  <SearchBar
+                    value={query}
+                    onChange={setQuery}
+                    onSubmit={() => handleSearch()}
+                    isLoading={isLoading}
+                    suggestions={suggestions}
+                    localSuggestions={localSuggestionLabels}
+                    isSuggesting={isSuggesting}
+                    onSelectSuggestion={(value) => {
+                      setQuery(value)
+                      setError(null)
+                      handleSearch(value)
+                    }}
+                    onSelectIssueSuggestion={handleSelectIssue}
+                  />
+                </div>
+              </div>
+            </header>
+
+            {/* Results section */}
+            <section className="flex flex-col gap-6 animate-fade-in">
+              {error ? (
+                <Card className="border-accent-red/20 bg-accent-red/5 p-4 text-sm text-red-200">
+                  {error}
+                </Card>
+              ) : null}
+              {issues.length > 0 ? (
+                <ComicGrid issues={issues} onSelect={handleSelectIssue} />
+              ) : !hasResults ? (
+                <div className="flex flex-col items-center gap-3 py-8 text-center">
+                  <p className="text-sm text-white/30">
+                    Search for a comic issue to discover and share soundtracks
+                  </p>
+                </div>
+              ) : null}
+            </section>
+          </>
         )}
       </div>
     </div>
