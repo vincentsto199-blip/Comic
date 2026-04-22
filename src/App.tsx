@@ -17,9 +17,10 @@ export default function App() {
   const [suggestions, setSuggestions] = useState<ComicIssue[]>([])
   const [isSuggesting, setIsSuggesting] = useState(false)
   const [backgroundIssues, setBackgroundIssues] = useState<ComicIssue[]>([])
-  const [viewportWidth, setViewportWidth] = useState(() =>
-    typeof window === 'undefined' ? 1200 : window.innerWidth,
-  )
+  const [viewportSize, setViewportSize] = useState(() => ({
+    width: typeof window === 'undefined' ? 1200 : window.innerWidth,
+    height: typeof window === 'undefined' ? 800 : window.innerHeight,
+  }))
   const debounceRef = useRef<number | null>(null)
 
   const fallbackCovers = useMemo(
@@ -39,13 +40,16 @@ export default function App() {
       .filter(Boolean) as string[]
     return fromApi.length > 0 ? fromApi : fallbackCovers
   }, [backgroundIssues, fallbackCovers])
-  const bgRows = 7
   const bgCoverWidth = 190
   const bgCoverHeight = 200
   const bgGap = 14
   const minColumns = Math.max(
     8,
-    Math.ceil((viewportWidth * 2) / (bgCoverWidth + bgGap)) + 2,
+    Math.ceil((viewportSize.width * 2) / (bgCoverWidth + bgGap)) + 2,
+  )
+  const bgRows = Math.max(
+    7,
+    Math.ceil((viewportSize.height * 1.6) / (bgCoverHeight + bgGap)) + 1,
   )
   const totalCells = minColumns * bgRows
   const backgroundRow = useMemo(() => {
@@ -87,7 +91,8 @@ export default function App() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    const handleResize = () => setViewportWidth(window.innerWidth)
+    const handleResize = () =>
+      setViewportSize({ width: window.innerWidth, height: window.innerHeight })
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])

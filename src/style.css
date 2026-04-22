@@ -50,7 +50,7 @@ body {
 
 .home-bg-track {
   position: absolute;
-  inset: -40%;
+  inset: -55%;
   display: flex;
   gap: var(--bg-gap, 14px);
   animation: home-bg-scroll 420s linear infinite;
