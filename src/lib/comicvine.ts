@@ -58,6 +58,31 @@ function setCachedResults(query: string, results: ComicIssue[]) {
   window.localStorage.setItem(key, payload)
 }
 
+function getCachedRecentIssues(): ComicIssue[] | null {
+  if (typeof window === 'undefined') return null
+  const cached = window.localStorage.getItem('comicvine:recent-issues')
+  if (!cached) return null
+  try {
+    const parsed = JSON.parse(cached) as {
+      timestamp: number
+      results: ComicIssue[]
+    }
+    if (Date.now() - parsed.timestamp > cacheTtlMs) {
+      window.localStorage.removeItem('comicvine:recent-issues')
+      return null
+    }
+    return parsed.results
+  } catch {
+    return null
+  }
+}
+
+function setCachedRecentIssues(results: ComicIssue[]) {
+  if (typeof window === 'undefined') return
+  const payload = JSON.stringify({ timestamp: Date.now(), results })
+  window.localStorage.setItem('comicvine:recent-issues', payload)
+}
+
 async function fetchWithFallback(url: string) {
   const targets =
     fallbackProxies.length > 0
@@ -149,4 +174,44 @@ export async function searchIssueSuggestions(
   query: string,
 ): Promise<ComicIssue[]> {
   return fetchIssues(query, 6)
+}
+
+export async function fetchRecentIssues(
+  limit = 18,
+): Promise<ComicIssue[]> {
+  if (!apiKey) {
+    throw new Error('Missing Comic Vine API key')
+  }
+
+  const cached = getCachedRecentIssues()
+  if (cached) {
+    return cached
+  }
+
+  const url = buildUrl('/issues/', {
+    api_key: apiKey,
+    format: 'json',
+    sort: 'cover_date:desc',
+    limit: String(limit),
+    field_list: 'id,name,issue_number,cover_date,image,volume',
+  })
+
+  const response = await fetchWithFallback(url)
+
+  if (!response.ok) {
+    throw new Error('Comic Vine request failed')
+  }
+
+  const data = (await response.json()) as {
+    results?: ComicIssue[]
+    error?: string
+  }
+
+  if (data.error && data.error !== 'OK') {
+    throw new Error(data.error)
+  }
+
+  const results = data.results ?? []
+  setCachedRecentIssues(results)
+  return results
 }

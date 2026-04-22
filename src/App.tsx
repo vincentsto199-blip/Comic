@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { ComicGrid } from './components/ComicGrid'
 import { SearchBar } from './components/SearchBar'
 import type { ComicIssue } from './lib/comicvine'
-import { searchIssueSuggestions, searchIssues } from './lib/comicvine'
+import { fetchRecentIssues, searchIssueSuggestions, searchIssues } from './lib/comicvine'
 import { Card } from './components/ui/Card'
 import { IssuePage } from './pages/IssuePage'
 import { AuthPanel } from './components/AuthPanel'
@@ -16,7 +16,81 @@ export default function App() {
   const [recentSearches, setRecentSearches] = useState<string[]>([])
   const [suggestions, setSuggestions] = useState<ComicIssue[]>([])
   const [isSuggesting, setIsSuggesting] = useState(false)
+  const [backgroundIssues, setBackgroundIssues] = useState<ComicIssue[]>([])
+  const [viewportWidth, setViewportWidth] = useState(() =>
+    typeof window === 'undefined' ? 1200 : window.innerWidth,
+  )
   const debounceRef = useRef<number | null>(null)
+
+  const fallbackCovers = useMemo(
+    () => [
+      'https://comicvine.gamespot.com/a/uploads/scale_large/6/67663/10122360-01.jpg',
+      'https://comicvine.gamespot.com/a/uploads/scale_large/6/67663/10123451-01.jpg',
+      'https://comicvine.gamespot.com/a/uploads/scale_large/6/67663/10125013-01.jpg',
+      'https://comicvine.gamespot.com/a/uploads/scale_large/6/67663/10126823-01.jpg',
+      'https://comicvine.gamespot.com/a/uploads/scale_large/6/67663/10128146-01.jpg',
+      'https://comicvine.gamespot.com/a/uploads/scale_large/6/67663/10129754-01.jpg',
+    ],
+    [],
+  )
+  const homeBackgroundCovers = useMemo(() => {
+    const fromApi = backgroundIssues
+      .map((issue) => issue.image?.super_url || issue.image?.small_url)
+      .filter(Boolean) as string[]
+    return fromApi.length > 0 ? fromApi : fallbackCovers
+  }, [backgroundIssues, fallbackCovers])
+  const bgRows = 7
+  const bgCoverWidth = 190
+  const bgCoverHeight = 200
+  const bgGap = 14
+  const minColumns = Math.max(
+    8,
+    Math.ceil((viewportWidth * 2) / (bgCoverWidth + bgGap)) + 2,
+  )
+  const totalCells = minColumns * bgRows
+  const backgroundRow = useMemo(() => {
+    if (homeBackgroundCovers.length === 0) return []
+    const filled: string[] = []
+    while (filled.length < totalCells) {
+      filled.push(...homeBackgroundCovers)
+    }
+    return filled.slice(0, totalCells)
+  }, [homeBackgroundCovers, totalCells])
+  const backgroundShift = useMemo(() => {
+    return minColumns * (bgCoverWidth + bgGap)
+  }, [minColumns])
+
+  useEffect(() => {
+    let isActive = true
+    if (selectedIssue) {
+      return () => {
+        isActive = false
+      }
+    }
+
+    fetchRecentIssues()
+      .then((results) => {
+        if (isActive) {
+          setBackgroundIssues(results)
+        }
+      })
+      .catch(() => {
+        if (isActive) {
+          setBackgroundIssues([])
+        }
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [selectedIssue])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const handleResize = () => setViewportWidth(window.innerWidth)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   useEffect(() => {
     const stored = window.localStorage.getItem('comictracks:recent-searches')
@@ -102,7 +176,44 @@ export default function App() {
   const hasResults = issues.length > 0 || selectedIssue
 
   return (
-    <div className="min-h-screen bg-ink-950 text-white">
+    <div className="relative min-h-screen bg-ink-950 text-white">
+      {!selectedIssue && homeBackgroundCovers.length > 0 ? (
+        <div
+          className={`home-bg ${hasResults ? 'home-bg--hidden' : 'home-bg--visible'}`}
+          aria-hidden="true"
+        >
+          <div className="home-bg-overlay" />
+          <div
+            className="home-bg-track"
+            style={{
+              ['--bg-shift' as string]: `${backgroundShift}px`,
+              ['--bg-rows' as string]: String(bgRows),
+              ['--bg-cover-width' as string]: `${bgCoverWidth}px`,
+              ['--bg-cover-height' as string]: `${bgCoverHeight}px`,
+              ['--bg-gap' as string]: `${bgGap}px`,
+            }}
+          >
+            <div className="home-bg-grid">
+              {backgroundRow.map((cover, index) => (
+                <div
+                  key={`grid-a-${cover}-${index}`}
+                  className="home-bg-cover"
+                  style={{ backgroundImage: `url(${cover})` }}
+                />
+              ))}
+            </div>
+            <div className="home-bg-grid">
+              {backgroundRow.map((cover, index) => (
+                <div
+                  key={`grid-b-${cover}-${index}`}
+                  className="home-bg-cover"
+                  style={{ backgroundImage: `url(${cover})` }}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
       {/* Top nav bar */}
       <nav className="fixed top-0 left-0 right-0 z-40 border-b border-white/[0.05] bg-ink-950/80 backdrop-blur-lg">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
@@ -128,7 +239,7 @@ export default function App() {
         </div>
       </nav>
 
-      <div className="mx-auto flex min-h-screen max-w-6xl flex-col px-6 pt-20 pb-16">
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col px-6 pt-20 pb-16">
         {selectedIssue ? (
           <div className="animate-fade-in">
             <IssuePage issue={selectedIssue} onBack={() => setSelectedIssue(null)} />
@@ -141,7 +252,11 @@ export default function App() {
                 hasResults ? 'py-8' : 'flex-1 py-16'
               }`}
             >
-              <div className={`flex flex-col items-center gap-5 transition-all duration-500 ${hasResults ? 'scale-95' : ''}`}>
+              <div
+                className={`flex w-full max-w-3xl flex-col items-center gap-6 rounded-3xl border border-white/10 bg-ink-950/70 px-6 py-8 shadow-2xl shadow-black/40 backdrop-blur-xl transition-all duration-500 ${
+                  hasResults ? 'scale-95' : ''
+                }`}
+              >
                 <div>
                   <h1 className={`font-bold tracking-tight text-white transition-all duration-500 text-balance ${
                     hasResults ? 'text-2xl' : 'text-4xl md:text-5xl'
@@ -149,7 +264,7 @@ export default function App() {
                     Comic
                     <span style={{ color: '#F25F5C' }}>tracks</span>
                   </h1>
-                  <p className={`mt-2 text-white/40 transition-all duration-500 ${
+                  <p className={`mt-2 text-white/60 transition-all duration-500 ${
                     hasResults ? 'text-sm' : 'text-base md:text-lg'
                   }`}>
                     Community soundtracks for comic issues

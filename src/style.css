@@ -22,6 +22,75 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Home page background carousel */
+.home-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0.3;
+  transition: opacity 600ms ease;
+}
+
+.home-bg--hidden {
+  opacity: 0;
+}
+
+.home-bg-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at top,
+    rgba(8, 8, 13, 0.25),
+    rgba(8, 8, 13, 0.92)
+  );
+  z-index: 1;
+}
+
+.home-bg-track {
+  position: absolute;
+  inset: -40%;
+  display: flex;
+  gap: var(--bg-gap, 14px);
+  animation: home-bg-scroll 420s linear infinite;
+  filter: saturate(0.85);
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  z-index: 0;
+}
+
+.home-bg-grid {
+  display: grid;
+  grid-template-rows: repeat(var(--bg-rows, 6), var(--bg-cover-height, 200px));
+  grid-auto-flow: column;
+  grid-auto-columns: var(--bg-cover-width, 190px);
+  grid-auto-rows: var(--bg-cover-height, 200px);
+  gap: var(--bg-gap, 14px);
+  flex: 0 0 auto;
+}
+
+.home-bg-cover {
+  width: 100%;
+  height: 100%;
+  border-radius: 14px;
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  opacity: 0.85;
+  filter: brightness(0.9);
+}
+
+@keyframes home-bg-scroll {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(calc(-1 * var(--bg-shift, 1200px)), 0, 0);
+  }
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;

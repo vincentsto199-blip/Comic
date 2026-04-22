@@ -73,7 +73,7 @@ export function SearchBar({
           onChange={(event) => onChange(event.target.value)}
           onFocus={() => setIsFocused(true)}
           placeholder="Search comic issue..."
-          className="w-full rounded-xl border border-white/[0.08] bg-ink-800/50 py-3.5 pl-11 pr-28 text-sm text-white placeholder:text-white/30 shadow-lg shadow-black/20 transition-all duration-200 focus:border-accent-red/25 focus:bg-ink-800/80 focus:outline-none focus:ring-1 focus:ring-accent-red/15 focus:shadow-accent-red/5"
+          className="w-full rounded-xl border border-white/20 bg-ink-800/80 py-3.5 pl-11 pr-28 text-sm text-white placeholder:text-white/60 shadow-lg shadow-black/30 transition-all duration-200 focus:border-accent-red/35 focus:bg-ink-800/90 focus:outline-none focus:ring-1 focus:ring-accent-red/25 focus:shadow-accent-red/10"
         />
 
         <button
