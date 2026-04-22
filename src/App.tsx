@@ -123,6 +123,9 @@ export default function App() {
       try {
         setLibraryError(null)
         const db = firestore
+        if (!db) {
+          return
+        }
         const favoritesRef = collection(db, 'users', user.id, 'favorites')
         const snapshot = await getDocs(favoritesRef)
         const issues: FavoriteIssue[] = []
