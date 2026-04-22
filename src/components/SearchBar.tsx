@@ -68,7 +68,8 @@ export function SearchBar({
         <button
           type="submit"
           disabled={isLoading}
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-accent-red px-4 py-2 text-sm font-medium text-white shadow-md shadow-accent-red/20 transition-all duration-200 hover:bg-accent-red-hover hover:shadow-accent-red/30 disabled:opacity-50 disabled:pointer-events-none active:scale-95 cursor-pointer"
+          style={{ backgroundColor: '#F25F5C' }}
+          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg px-4 py-2 text-sm font-medium text-white shadow-md shadow-accent-red/20 transition-all duration-200 hover:shadow-accent-red/30 disabled:opacity-50 disabled:pointer-events-none active:scale-95 cursor-pointer"
         >
           {isLoading ? (
             <span className="flex items-center gap-2">

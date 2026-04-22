@@ -42,7 +42,7 @@ export function SoundtrackCard({
       {/* Header */}
       <div className="flex items-center justify-between gap-3 px-5 pt-5 pb-4">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent-blue/10 text-accent-blue flex-shrink-0">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent-red/15 text-accent-red flex-shrink-0">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 18V5l12-2v13" />
               <circle cx="6" cy="18" r="3" />

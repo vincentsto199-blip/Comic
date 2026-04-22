@@ -350,7 +350,7 @@ export function IssuePage({ issue, onBack }: IssuePageProps) {
   }
 
   const formInputClass =
-    'w-full rounded-lg border border-white/[0.08] bg-ink-800/60 px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 transition-colors duration-200 focus:border-accent-blue/40 focus:bg-ink-800 focus:outline-none focus:ring-1 focus:ring-accent-blue/20'
+    'w-full rounded-lg border border-white/[0.08] bg-ink-800/60 px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 transition-colors duration-200 focus:border-accent-red/40 focus:bg-ink-800 focus:outline-none focus:ring-1 focus:ring-accent-red/20'
 
   return (
     <div className="flex flex-col gap-8">
@@ -371,6 +371,7 @@ export function IssuePage({ issue, onBack }: IssuePageProps) {
             <h2 className="text-xl font-bold tracking-tight text-white md:text-2xl">
               {issue.volume?.name ?? 'Untitled'} <span className="text-white/40">#{issue.issue_number}</span>
             </h2>
+            <div className="mt-2 h-px w-12 bg-accent-red/40" />
           </div>
         </div>
         <div className="flex items-center gap-2">

@@ -146,7 +146,8 @@ export default function App() {
                   <h1 className={`font-bold tracking-tight text-white transition-all duration-500 text-balance ${
                     hasResults ? 'text-2xl' : 'text-4xl md:text-5xl'
                   }`}>
-                    Comic<span className="text-accent-red">tracks</span>
+                    Comic
+                    <span style={{ color: '#F25F5C' }}>tracks</span>
                   </h1>
                   <p className={`mt-2 text-white/40 transition-all duration-500 ${
                     hasResults ? 'text-sm' : 'text-base md:text-lg'
