@@ -40,6 +40,12 @@ export function SearchBar({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  useEffect(() => {
+    if (hideSuggestions) {
+      setIsFocused(false)
+    }
+  }, [hideSuggestions])
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setIsFocused(false)
