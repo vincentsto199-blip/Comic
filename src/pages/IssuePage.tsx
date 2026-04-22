@@ -4,6 +4,7 @@ import { firebaseReady, firestore } from '../lib/firebase'
 import {
   collection,
   doc,
+  deleteDoc,
   getDoc,
   getDocs,
   limit,
@@ -349,6 +350,26 @@ export function IssuePage({ issue, onBack }: IssuePageProps) {
     setShowForm(true)
   }
 
+  const handleDeletePlaylist = async () => {
+    if (!user || !editingSoundtrackId || !firestore) {
+      return
+    }
+
+    const confirmDelete = window.confirm(
+      'Delete this playlist? This cannot be undone.',
+    )
+    if (!confirmDelete) return
+
+    try {
+      await deleteDoc(doc(firestore, 'soundtracks', editingSoundtrackId))
+      setShowForm(false)
+      setEditingSoundtrackId(null)
+      setRefreshKey((prev) => prev + 1)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete playlist.')
+    }
+  }
+
   const formInputClass =
     'w-full rounded-lg border border-white/[0.08] bg-ink-800/60 px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 transition-colors duration-200 focus:border-accent-red/40 focus:bg-ink-800 focus:outline-none focus:ring-1 focus:ring-accent-red/20'
 
@@ -549,6 +570,15 @@ export function IssuePage({ issue, onBack }: IssuePageProps) {
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-2 border-t border-white/[0.05]">
+                {editingSoundtrackId ? (
+                  <Button
+                    variant="danger"
+                    onClick={handleDeletePlaylist}
+                    className="text-sm"
+                  >
+                    Delete
+                  </Button>
+                ) : null}
                 <Button
                   variant="ghost"
                   onClick={() => {
