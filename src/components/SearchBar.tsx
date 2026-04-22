@@ -10,6 +10,7 @@ interface SearchBarProps {
   suggestions?: ComicIssue[]
   localSuggestions?: string[]
   isSuggesting?: boolean
+  hideSuggestions?: boolean
   onSelectSuggestion?: (value: string) => void
   onSelectIssueSuggestion?: (issue: ComicIssue) => void
 }
@@ -22,6 +23,7 @@ export function SearchBar({
   suggestions = [],
   localSuggestions = [],
   isSuggesting = false,
+  hideSuggestions = false,
   onSelectSuggestion,
   onSelectIssueSuggestion,
 }: SearchBarProps) {
@@ -44,7 +46,10 @@ export function SearchBar({
     onSubmit()
   }
 
-  const showDropdown = isFocused && (suggestions.length > 0 || localSuggestions.length > 0 || isSuggesting)
+  const showDropdown =
+    !hideSuggestions &&
+    isFocused &&
+    (suggestions.length > 0 || localSuggestions.length > 0 || isSuggesting)
 
   return (
     <div className="relative" ref={wrapperRef}>

@@ -166,6 +166,7 @@ export default function App() {
                     suggestions={suggestions}
                     localSuggestions={localSuggestionLabels}
                     isSuggesting={isSuggesting}
+                    hideSuggestions={Boolean(hasResults)}
                     onSelectSuggestion={(value) => {
                       setQuery(value)
                       setError(null)
