@@ -122,7 +122,8 @@ export default function App() {
     const loadFavorites = async () => {
       try {
         setLibraryError(null)
-        const favoritesRef = collection(firestore, 'users', user.id, 'favorites')
+        const db = firestore
+        const favoritesRef = collection(db, 'users', user.id, 'favorites')
         const snapshot = await getDocs(favoritesRef)
         const issues: FavoriteIssue[] = []
         snapshot.forEach((docSnap) => {
