@@ -96,11 +96,11 @@ export function SearchBar({
 
       {/* Autocomplete dropdown */}
       {showDropdown ? (
-        <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-xl border border-white/[0.08] bg-ink-900/95 backdrop-blur-lg shadow-2xl shadow-black/40 animate-slide-down">
+        <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-xl border border-white/[0.12] bg-ink-950/95 backdrop-blur-lg shadow-2xl shadow-black/40 animate-slide-down">
           {isSuggesting ? (
             <div className="flex items-center gap-3 px-4 py-3">
               <div className="h-4 w-4 rounded-full border-2 border-accent-red/50 border-t-transparent animate-spin" />
-              <span className="text-sm text-white/40">Searching...</span>
+              <span className="text-sm text-white/70">Searching...</span>
             </div>
           ) : (
             <>
@@ -108,13 +108,13 @@ export function SearchBar({
               {suggestions.length > 0 ? (
                 <div>
                   <div className="px-4 pt-3 pb-1.5">
-                    <p className="text-[10px] font-medium uppercase tracking-wider text-white/25">Issues</p>
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-white/50">Issues</p>
                   </div>
                   {suggestions.map((issue) => (
                     <button
                       key={issue.id}
                       type="button"
-                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors duration-150 hover:bg-white/[0.05] cursor-pointer group"
+                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors duration-150 hover:bg-white/[0.08] cursor-pointer group"
                       onClick={() => {
                         setIsFocused(false)
                         onSelectIssueSuggestion?.(issue)
@@ -130,14 +130,14 @@ export function SearchBar({
                         <div className="h-10 w-7 rounded-sm bg-ink-700 flex-shrink-0" />
                       )}
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-white/80 group-hover:text-white transition-colors">
+                        <p className="truncate text-sm font-medium text-white/90 group-hover:text-white transition-colors">
                           {issue.volume?.name ?? 'Untitled'} #{issue.issue_number}
                         </p>
-                        <p className="truncate text-xs text-white/30">
+                        <p className="truncate text-xs text-white/60">
                           {issue.name ?? 'Unnamed'} {issue.cover_date ? `- ${issue.cover_date}` : ''}
                         </p>
                       </div>
-                      <svg className="h-4 w-4 text-white/20 group-hover:text-white/50 transition-colors flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg className="h-4 w-4 text-white/40 group-hover:text-white/70 transition-colors flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M9 18l6-6-6-6" />
                       </svg>
                     </button>
@@ -149,23 +149,23 @@ export function SearchBar({
               {localSuggestions.length > 0 && suggestions.length === 0 ? (
                 <div>
                   <div className="px-4 pt-3 pb-1.5">
-                    <p className="text-[10px] font-medium uppercase tracking-wider text-white/25">Recent</p>
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-white/50">Recent</p>
                   </div>
                   {localSuggestions.map((item) => (
                     <button
                       key={item}
                       type="button"
-                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors duration-150 hover:bg-white/[0.05] cursor-pointer"
+                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors duration-150 hover:bg-white/[0.08] cursor-pointer"
                       onClick={() => {
                         setIsFocused(false)
                         onSelectSuggestion?.(item)
                       }}
                     >
-                      <svg className="h-4 w-4 text-white/20 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg className="h-4 w-4 text-white/40 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="12" r="10" />
                         <polyline points="12 6 12 12 16 14" />
                       </svg>
-                      <span className="text-sm text-white/60">{item}</span>
+                      <span className="text-sm text-white/85">{item}</span>
                     </button>
                   ))}
                 </div>

@@ -6,6 +6,14 @@ import { fetchRecentIssues, searchIssueSuggestions, searchIssues } from './lib/c
 import { Card } from './components/ui/Card'
 import { IssuePage } from './pages/IssuePage'
 import { AuthPanel } from './components/AuthPanel'
+import { useAuth } from './context/AuthContext'
+import { firebaseReady, firestore } from './lib/firebase'
+import { collection, getDocs } from 'firebase/firestore'
+
+interface FavoriteIssue {
+  id: string
+  issue: ComicIssue
+}
 
 export default function App() {
   const [query, setQuery] = useState('')
@@ -17,11 +25,15 @@ export default function App() {
   const [suggestions, setSuggestions] = useState<ComicIssue[]>([])
   const [isSuggesting, setIsSuggesting] = useState(false)
   const [backgroundIssues, setBackgroundIssues] = useState<ComicIssue[]>([])
+  const [favoriteIssues, setFavoriteIssues] = useState<FavoriteIssue[]>([])
+  const [libraryError, setLibraryError] = useState<string | null>(null)
+  const [showLibrary, setShowLibrary] = useState(false)
   const [viewportSize, setViewportSize] = useState(() => ({
     width: typeof window === 'undefined' ? 1200 : window.innerWidth,
     height: typeof window === 'undefined' ? 800 : window.innerHeight,
   }))
   const debounceRef = useRef<number | null>(null)
+  const { user } = useAuth()
 
   const fallbackCovers = useMemo(
     () => [
@@ -96,6 +108,57 @@ export default function App() {
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+
+  useEffect(() => {
+    let isActive = true
+    if (!user || !firebaseReady || !firestore) {
+      setFavoriteIssues([])
+      setLibraryError(null)
+      return () => {
+        isActive = false
+      }
+    }
+
+    const loadFavorites = async () => {
+      try {
+        setLibraryError(null)
+        const favoritesRef = collection(firestore, 'users', user.id, 'favorites')
+        const snapshot = await getDocs(favoritesRef)
+        const issues: FavoriteIssue[] = []
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data() as {
+            type?: string
+            issue?: ComicIssue
+          }
+
+          if (data.type === 'issue' && data.issue) {
+            issues.push({ id: docSnap.id, issue: data.issue })
+          }
+        })
+
+        if (isActive) {
+          setFavoriteIssues(issues)
+        }
+      } catch (err) {
+        if (isActive) {
+          setLibraryError(
+            err instanceof Error ? err.message : 'Failed to load favorites.',
+          )
+        }
+      }
+    }
+
+    loadFavorites()
+    const handleFavoritesUpdated = () => {
+      loadFavorites()
+    }
+    window.addEventListener('favorites:updated', handleFavoritesUpdated)
+
+    return () => {
+      isActive = false
+      window.removeEventListener('favorites:updated', handleFavoritesUpdated)
+    }
+  }, [user])
 
   useEffect(() => {
     const stored = window.localStorage.getItem('comictracks:recent-searches')
@@ -176,6 +239,13 @@ export default function App() {
     setSelectedIssue(issue)
     setSuggestions([])
     setQuery('')
+  }
+
+  const handleOpenFavoriteIssue = (issue: ComicIssue) => {
+    setSelectedIssue(issue)
+    setSuggestions([])
+    setQuery('')
+    setIssues([])
   }
 
   const hasResults = issues.length > 0 || selectedIssue
@@ -300,6 +370,65 @@ export default function App() {
 
             {/* Results section */}
             <section className="flex flex-col gap-6 animate-fade-in">
+              {!hasResults && user && favoriteIssues.length > 0 ? (
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-sm font-semibold uppercase tracking-wider text-white/50">
+                      My Library
+                    </h2>
+                  </div>
+                  {libraryError ? (
+                    <Card className="border-accent-red/20 bg-accent-red/5 p-4 text-sm text-red-200">
+                      {libraryError}
+                    </Card>
+                  ) : null}
+                  {favoriteIssues.length > 0 ? (
+                    <div className="flex items-stretch gap-4">
+                      <div className="grid flex-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        {favoriteIssues.slice(0, 4).map((favorite) => (
+                          <button
+                            key={favorite.id}
+                            onClick={() => handleOpenFavoriteIssue(favorite.issue)}
+                            className="group text-left"
+                          >
+                            <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-ink-900/60 shadow-lg shadow-black/30 transition-transform duration-200 group-hover:-translate-y-1">
+                              {favorite.issue.image?.small_url ? (
+                                <img
+                                  src={favorite.issue.image.small_url}
+                                  alt={favorite.issue.name ?? 'Issue cover'}
+                                  className="h-44 w-full object-cover"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div className="flex h-44 items-center justify-center bg-ink-800 text-xs text-white/40">
+                                  No cover
+                                </div>
+                              )}
+                            </div>
+                            <p className="mt-2 text-sm font-medium text-white/85">
+                              {favorite.issue.volume?.name ?? 'Untitled'} #{favorite.issue.issue_number}
+                            </p>
+                            <p className="text-xs text-white/40">
+                              {favorite.issue.name ?? 'Unnamed Issue'}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                      {favoriteIssues.length > 4 ? (
+                        <button
+                          onClick={() => setShowLibrary(true)}
+                          className="hidden items-center justify-center rounded-2xl border border-white/10 bg-ink-900/50 px-4 text-white/40 transition-colors hover:text-white hover:bg-white/[0.06] sm:flex"
+                          aria-label="View all favorites"
+                        >
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M5 12h14M13 5l6 7-6 7" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
               {error ? (
                 <Card className="border-accent-red/20 bg-accent-red/5 p-4 text-sm text-red-200">
                   {error}
@@ -319,6 +448,69 @@ export default function App() {
           </>
         )}
       </div>
+      {showLibrary ? (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setShowLibrary(false)
+          }}
+        >
+          <div className="relative w-full max-w-4xl max-h-[85vh] overflow-y-auto rounded-2xl border border-white/10 bg-ink-950/90 p-6 shadow-2xl shadow-black/50">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-lg font-semibold text-white">My Library</h3>
+                <p className="text-sm text-white/40">All your saved issues.</p>
+              </div>
+              <button
+                onClick={() => setShowLibrary(false)}
+                className="rounded-lg px-3 py-2 text-sm text-white/40 hover:text-white hover:bg-white/[0.06]"
+              >
+                Close
+              </button>
+            </div>
+            {favoriteIssues.length > 0 ? (
+              <div className="mb-8">
+                <p className="text-xs font-medium uppercase tracking-wider text-white/30 mb-3">
+                  Issues
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  {favoriteIssues.map((favorite) => (
+                    <button
+                      key={favorite.id}
+                      onClick={() => {
+                        handleOpenFavoriteIssue(favorite.issue)
+                        setShowLibrary(false)
+                      }}
+                      className="group text-left"
+                    >
+                      <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-ink-900/60 shadow-lg shadow-black/30 transition-transform duration-200 group-hover:-translate-y-1">
+                        {favorite.issue.image?.small_url ? (
+                          <img
+                            src={favorite.issue.image.small_url}
+                            alt={favorite.issue.name ?? 'Issue cover'}
+                            className="h-44 w-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="flex h-44 items-center justify-center bg-ink-800 text-xs text-white/40">
+                            No cover
+                          </div>
+                        )}
+                      </div>
+                      <p className="mt-2 text-sm font-medium text-white/85">
+                        {favorite.issue.volume?.name ?? 'Untitled'} #{favorite.issue.issue_number}
+                      </p>
+                      <p className="text-xs text-white/40">
+                        {favorite.issue.name ?? 'Unnamed Issue'}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

@@ -31,6 +31,8 @@ export function IssuePage({ issue, onBack }: IssuePageProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [soundtracks, setSoundtracks] = useState<Soundtrack[]>([])
+  const [issueDocId, setIssueDocId] = useState<string | null>(null)
+  const [isIssueFavorited, setIsIssueFavorited] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [playlistTitle, setPlaylistTitle] = useState('')
   const [tracksDraft, setTracksDraft] = useState<
@@ -62,7 +64,7 @@ export function IssuePage({ issue, onBack }: IssuePageProps) {
           limit(1),
         )
         const issueSnapshot = await getDocs(issueQuery)
-        let issueDocId: string
+        let resolvedIssueDocId: string
 
         if (issueSnapshot.empty) {
           const newIssueRef = doc(issuesRef)
@@ -72,18 +74,35 @@ export function IssuePage({ issue, onBack }: IssuePageProps) {
             cover_url: issue.image?.super_url ?? issue.image?.small_url ?? null,
             created_at: serverTimestamp(),
           })
-          issueDocId = newIssueRef.id
+          resolvedIssueDocId = newIssueRef.id
         } else {
-          issueDocId = issueSnapshot.docs[0].id
+          resolvedIssueDocId = issueSnapshot.docs[0].id
         }
+        setIssueDocId(resolvedIssueDocId)
 
         const soundtracksRef = collection(db, 'soundtracks')
         const soundtracksQuery = query(
           soundtracksRef,
-          where('issue_id', '==', issueDocId),
+          where('issue_id', '==', resolvedIssueDocId),
           orderBy('votes_count', 'desc'),
         )
         const soundtracksSnapshot = await getDocs(soundtracksQuery)
+
+        let issueIsFavorite = false
+
+        if (user) {
+          const favoritesRef = collection(db, 'users', user.id, 'favorites')
+          const favoritesSnap = await getDocs(favoritesRef)
+          favoritesSnap.forEach((favoriteDoc) => {
+            const data = favoriteDoc.data() as {
+              type?: string
+              issue_id?: string
+            }
+            if (data.type === 'issue' && data.issue_id === resolvedIssueDocId) {
+              issueIsFavorite = true
+            }
+          })
+        }
 
         const mapped = soundtracksSnapshot.docs.map((docSnap) => {
           const data = docSnap.data() as {
@@ -139,6 +158,7 @@ export function IssuePage({ issue, onBack }: IssuePageProps) {
 
         if (isMounted) {
           setSoundtracks(withVotes)
+          setIsIssueFavorited(issueIsFavorite)
         }
       } catch (err) {
         if (isMounted) {
@@ -332,6 +352,42 @@ export function IssuePage({ issue, onBack }: IssuePageProps) {
     setRefreshKey((prev) => prev + 1)
   }
 
+  const handleToggleIssueFavorite = async () => {
+    if (!firestore || !user || !issueDocId) {
+      setError('Please sign in to save favorites.')
+      return
+    }
+
+    const favoriteRef = doc(
+      firestore,
+      'users',
+      user.id,
+      'favorites',
+      `issue_${issueDocId}`,
+    )
+
+    try {
+      if (isIssueFavorited) {
+        await deleteDoc(favoriteRef)
+        setIsIssueFavorited(false)
+        window.dispatchEvent(new CustomEvent('favorites:updated'))
+      } else {
+        await setDoc(favoriteRef, {
+          type: 'issue',
+          issue_id: issueDocId,
+          comicvine_issue_id: String(issue.id),
+          issue,
+          created_at: serverTimestamp(),
+        })
+        setIsIssueFavorited(true)
+        window.dispatchEvent(new CustomEvent('favorites:updated'))
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update favorite.')
+    }
+  }
+
+
 
   const handleEdit = (soundtrack: Soundtrack) => {
     if (!user || soundtrack.user_id !== user.id) {
@@ -396,6 +452,22 @@ export function IssuePage({ issue, onBack }: IssuePageProps) {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {user ? (
+            <Button
+              variant="ghost"
+              onClick={handleToggleIssueFavorite}
+              className={`text-sm ${
+                isIssueFavorited
+                  ? 'text-yellow-200 hover:text-yellow-100'
+                  : 'text-white/60 hover:text-white'
+              }`}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill={isIssueFavorited ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+                <path d="M12 17.3l-6.18 3.4 1.18-6.88L1 8.77l6.91-1L12 1.5l3.09 6.27 6.91 1-5 4.05 1.18 6.88z" />
+              </svg>
+              {isIssueFavorited ? 'Saved' : 'Save'}
+            </Button>
+          ) : null}
           {user ? (
             <Button
               variant="primary"

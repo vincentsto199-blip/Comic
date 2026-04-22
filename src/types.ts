@@ -19,3 +19,11 @@ export interface Soundtrack {
   user_name: string
   currentUserVote: 1 | -1 | 0
 }
+
+export interface SoundtrackComment {
+  id: string
+  text: string
+  user_id: string
+  user_name: string
+  created_at: string
+}

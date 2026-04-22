@@ -1,7 +1,19 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Card } from './ui/Card'
-import type { Soundtrack, Track } from '../types'
+import type { Soundtrack, SoundtrackComment, Track } from '../types'
 import { TrackRow } from './TrackRow'
+import { useAuth } from '../context/AuthContext'
+import { firebaseReady, firestore } from '../lib/firebase'
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  orderBy,
+  query,
+  serverTimestamp,
+} from 'firebase/firestore'
 
 interface SoundtrackCardProps {
   soundtrack: Soundtrack
@@ -25,6 +37,13 @@ export function SoundtrackCard({
   const [downBounce, setDownBounce] = useState(false)
   const upRingRef = useRef<HTMLSpanElement>(null)
   const downRingRef = useRef<HTMLSpanElement>(null)
+  const { user } = useAuth()
+  const [showComments, setShowComments] = useState(false)
+  const [comments, setComments] = useState<SoundtrackComment[]>([])
+  const [commentText, setCommentText] = useState('')
+  const [isLoadingComments, setIsLoadingComments] = useState(false)
+  const [commentError, setCommentError] = useState<string | null>(null)
+  const [isSavingComment, setIsSavingComment] = useState(false)
 
   const handleVote = (direction: 1 | -1) => {
     if (direction === 1) {
@@ -35,6 +54,103 @@ export function SoundtrackCard({
       setTimeout(() => setDownBounce(false), 400)
     }
     onVote(soundtrack, direction)
+  }
+
+  const loadComments = async () => {
+    if (!firebaseReady || !firestore) {
+      setCommentError('Comments are unavailable right now.')
+      return
+    }
+    setIsLoadingComments(true)
+    setCommentError(null)
+    try {
+      const commentsRef = collection(
+        firestore,
+        'soundtracks',
+        soundtrack.id,
+        'comments',
+      )
+      const commentsQuery = query(commentsRef, orderBy('created_at', 'desc'))
+      const snapshot = await getDocs(commentsQuery)
+      const mapped = snapshot.docs.map((docSnap) => {
+        const data = docSnap.data() as {
+          text?: string
+          user_id?: string
+          user_name?: string
+          created_at?: { toDate?: () => Date }
+        }
+        const createdAt = data.created_at?.toDate?.() ?? new Date()
+        return {
+          id: docSnap.id,
+          text: data.text ?? '',
+          user_id: data.user_id ?? 'unknown',
+          user_name: data.user_name ?? 'Anonymous',
+          created_at: createdAt.toLocaleDateString(),
+        }
+      })
+      setComments(mapped)
+    } catch (err) {
+      setCommentError(err instanceof Error ? err.message : 'Failed to load comments.')
+    } finally {
+      setIsLoadingComments(false)
+    }
+  }
+
+  useEffect(() => {
+    if (showComments) {
+      loadComments()
+    }
+  }, [showComments])
+
+  const handleAddComment = async () => {
+    if (!user) {
+      setCommentError('Sign in to comment.')
+      return
+    }
+    if (!commentText.trim()) return
+    if (!firebaseReady || !firestore) {
+      setCommentError('Comments are unavailable right now.')
+      return
+    }
+
+    setIsSavingComment(true)
+    setCommentError(null)
+    try {
+      const commentsRef = collection(
+        firestore,
+        'soundtracks',
+        soundtrack.id,
+        'comments',
+      )
+      await addDoc(commentsRef, {
+        text: commentText.trim(),
+        user_id: user.id,
+        user_name: user.name ?? user.email ?? 'User',
+        created_at: serverTimestamp(),
+      })
+      setCommentText('')
+      await loadComments()
+    } catch (err) {
+      setCommentError(err instanceof Error ? err.message : 'Failed to post comment.')
+    } finally {
+      setIsSavingComment(false)
+    }
+  }
+
+  const handleDeleteComment = async (comment: SoundtrackComment) => {
+    if (!user || comment.user_id !== user.id) {
+      return
+    }
+    if (!firebaseReady || !firestore) return
+
+    try {
+      await deleteDoc(
+        doc(firestore, 'soundtracks', soundtrack.id, 'comments', comment.id),
+      )
+      await loadComments()
+    } catch (err) {
+      setCommentError(err instanceof Error ? err.message : 'Failed to delete comment.')
+    }
   }
 
   return (
@@ -57,6 +173,16 @@ export function SoundtrackCard({
           </div>
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
+          <button
+            onClick={() => setShowComments((prev) => !prev)}
+            className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all duration-200 cursor-pointer ${
+              showComments
+                ? 'bg-white/[0.08] text-white'
+                : 'text-white/40 hover:text-white hover:bg-white/[0.06]'
+            }`}
+          >
+            Comments{comments.length > 0 ? ` (${comments.length})` : ''}
+          </button>
           {isOwner ? (
             <button
               onClick={() => onEdit(soundtrack)}
@@ -112,6 +238,64 @@ export function SoundtrackCard({
           </p>
         )}
       </div>
+      {showComments ? (
+        <div className="border-t border-white/[0.04] px-5 py-4">
+          <div className="flex flex-col gap-3">
+            {commentError ? (
+              <p className="text-xs text-accent-red">{commentError}</p>
+            ) : null}
+            {isLoadingComments ? (
+              <p className="text-xs text-white/40">Loading comments...</p>
+            ) : comments.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                {comments.map((comment) => (
+                  <div key={comment.id} className="rounded-lg border border-white/[0.06] bg-ink-900/40 p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-xs font-semibold text-white/70">
+                        {comment.user_name}
+                      </p>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[10px] text-white/30">
+                          {comment.created_at}
+                        </span>
+                        {user && comment.user_id === user.id ? (
+                          <button
+                            onClick={() => handleDeleteComment(comment)}
+                            className="text-[10px] text-white/30 hover:text-accent-red"
+                          >
+                            Delete
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+                    <p className="mt-1 text-xs text-white/60">{comment.text}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-white/40">No comments yet.</p>
+            )}
+            <div className="flex flex-col gap-2">
+              <textarea
+                value={commentText}
+                onChange={(event) => setCommentText(event.target.value)}
+                placeholder={user ? 'Write a comment...' : 'Sign in to comment.'}
+                disabled={!user || isSavingComment}
+                className="min-h-[70px] w-full resize-none rounded-lg border border-white/[0.08] bg-ink-900/60 px-3 py-2 text-xs text-white placeholder:text-white/30 focus:border-accent-red/35 focus:outline-none"
+              />
+              <div className="flex justify-end">
+                <button
+                  onClick={handleAddComment}
+                  disabled={!user || isSavingComment || !commentText.trim()}
+                  className="rounded-lg bg-accent-red px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                >
+                  {isSavingComment ? 'Posting...' : 'Post comment'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </Card>
   )
 }
