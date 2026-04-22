@@ -66,9 +66,6 @@ export function AuthPanel() {
   if (user) {
     return (
       <div className="flex items-center gap-3">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-red/20 text-xs font-semibold text-accent-red-hover">
-          {(user.name ?? 'U').charAt(0).toUpperCase()}
-        </div>
         <div className="text-right">
           <p className="text-sm font-medium text-white/90">{user.name ?? 'User'}</p>
         </div>
