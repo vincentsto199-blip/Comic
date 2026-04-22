@@ -65,11 +65,22 @@ async function fetchWithFallback(url: string) {
       : [url]
 
   let lastError: unknown = null
+  const startTime = Date.now()
+  const totalTimeoutMs = 12000
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
     for (const target of targets) {
+      const elapsedMs = Date.now() - startTime
+      const remainingMs = totalTimeoutMs - elapsedMs
+      if (remainingMs <= 0) {
+        throw lastError ?? new Error('Comic Vine request timed out')
+      }
+
       const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 8000)
+      const timeout = setTimeout(
+        () => controller.abort(),
+        Math.min(8000, remainingMs),
+      )
 
       try {
         const response = await fetch(target, { signal: controller.signal })
